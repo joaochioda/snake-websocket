@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>snake</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <form id="register">
+        <input type="text" name="username" placeholder="username">
+        <button type="submit">Jogar</button>
+    </form>
+    <canvas tabindex="1" id="myCanvas" width="480" height="480" style="border: 1px solid black"></canvas>
+
+    <script type="text/javascript">
+        $("#myCanvas").on("keydown",function search(e) {
+            e.preventDefault();
+            let direction = {};
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                direction = { dx: 15, dy: 0 };
+            } else if (e.key == "Left" || e.key == "ArrowLeft") {
+                direction = { dx: -15, dy: 0 };
+            } else if (e.key == "Up" || e.key == "ArrowUp") {
+                direction = { dx: 0, dy: -15 };
+            } else if (e.key == "Down" || e.key == "ArrowDown") {
+                direction = { dx: 0, dy: 15 };
+            }
+            socket.emit("move", direction);
+        });
+        var canvas = $("#myCanvas");
+        var ctx = $("#myCanvas")[0].getContext('2d');
+
+        let playerId = null;
+
+        var socket = io('http://localhost:3000');
+
+        socket.on('drawGame', function (apple, snake1, snake2, score) {
+            ctx.clearRect(0, 0, 480, 480);
+            drawApple(apple);
+            drawSnake(snake1, snake2);
+            drawScore(score);
+        });
+
+        socket.on('playerId', function(id) {
+            playerId = id;
+        })
+
+        function drawApple(apple){
+            ctx.beginPath();
+            ctx.rect(apple[0], apple[1], 13, 13);
+            ctx.fillStyle = "#FF0000";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawSnake(snake1, snake2){
+            for (let i = 0; i < snake1.length; i++) {
+                ctx.beginPath();
+                ctx.rect(snake1[i][0], snake1[i][1], 13, 13);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.closePath();
+
+            } 
+            for (let i = 0; i < snake2.length; i++) {
+                ctx.beginPath();
+                ctx.rect(snake2[i][0], snake2[i][1], 13, 13);
+                ctx.fillStyle = "#f55442";
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function drawScore(score) {
+            ctx.fillStyle = "#8f00fc";
+
+            ctx.font = "32px serif";
+            ctx.fillText(`Score: ${score[playerId]}`, 10, 50);
+        }   
+
+
+
+        $('#register').submit(function(event){
+            event.preventDefault();
+            var username = $('input[name=username]').val();
+            if (username.length > 0) {
+                var messageObject = {
+                    username: username
+                }
+                socket.emit('sendMessage', messageObject);
+            }
+        });
+
+    </script>
+</body>
+</html>
